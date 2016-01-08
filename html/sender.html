@@ -1,0 +1,65 @@
+<html>
+<head>
+<script type="text/javascript" src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js"></script>
+<bdoy>
+
+This is the sender app
+<br>
+<a href="chrome-extension://boadgeojelhgndaghljhdicfkmllpafd/cast_setup/devices.html">Look @ device details</a>
+<br>
+<a href="http://10.1.10.226:9222/">debug chromecast</a>
+<script langauge="javascript">
+window['__onGCastApiAvailable'] = function(loaded, errorInfo) {
+  if (loaded) {
+    initializeCastApi();
+  } else {
+    console.log(errorInfo);
+  }
+}
+function receiverListener(e) {
+  console.log("> receiverListener ", e);
+  if( e === chrome.cast.ReceiverAvailability.AVAILABLE) {
+  	console.log(">> totes available");
+  }
+}
+function sessionListener(e) {
+	console.log("> sessionListener ", e);
+  session = e;
+  if (session.media.length != 0) {
+  	console.log(">> totes have some medias! ", session.media.length);
+    onMediaDiscovered('onRequestSessionSuccess', session.media[0]);
+  }
+  if (session.status !== chrome.cast.SessionStatus.CONNECTED) {
+      console.log('SessionListener: Session disconnected ? ', session.status);
+      // Update local player to disconnected state
+  }
+}
+function onInitSuccess() {
+	console.log("> onInitSuccess ", arguments);
+}
+function onError() {
+	console.error("> onError ", arguments);
+}
+
+initializeCastApi = function() {
+  var sessionRequest = new chrome.cast.SessionRequest('243116E9');
+  var apiConfig = new chrome.cast.ApiConfig(sessionRequest,
+    sessionListener,
+    receiverListener);
+  chrome.cast.initialize(apiConfig, onInitSuccess, onError);
+};
+function onRequestSessionSuccess(e) {
+	console.log("> onRequestSessionSuccess ", e);
+  session = e;
+}
+function onLaunchError(e) {
+	console.error("> onLaunchError ",e.code," - ",e.description," :: ",e.details);
+}
+clickLaunch = function() {
+	chrome.cast.requestSession(onRequestSessionSuccess, onLaunchError);
+}
+function stopApp() {
+  session.stop(onSuccess, onError);
+}
+</script>
+</body>
