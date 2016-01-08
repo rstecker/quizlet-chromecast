@@ -1,7 +1,10 @@
-// Quizlet Chromecast sender
+// Quizlet Chromecast sender library
 // Jan 2016
 
 (function(win) {
+
+  // Namespace
+  var sender = win.sender = {};
 
   // Constants
   var APP_ID = '243116E9';
@@ -36,7 +39,11 @@
   }
 
   function onStopSuccess() {
-    log('Session stopped');
+    log('Session ended');
+  }
+
+  function onLeaveSuccess() {
+    log('Session disconnected');
   }
 
   function onSendMessageSuccess() {
@@ -55,9 +62,16 @@
     }
   };
 
-  // Message handler
+  // Messaging
+  var _handleMessage = function() {};
+
   function handleMessage(channel, msg) {
-    log(msg);
+    var message = JSON.parse(msg);
+    _handleMessage(message);
+  }
+
+  function sendMessage(msg) {
+    session.sendMessage(CHANNEL, msg, onSendMessageSuccess, onError);
   }
 
   // Initializes the Chromecast API
@@ -68,16 +82,51 @@
   }
 
   // SENDER ACTIONS
-  var launch = win.launch = function() {
+  sender.join = function() {
     chrome.cast.requestSession(onSession, onError);
   };
 
-  var stopApp = win.stopApp = function() {
+  sender.stopSession = function() {
     session.stop(onStopSuccess, onError);
   };
 
-  var sendMessage = win.sendMessage = function(msg) {
-    session.sendMessage(CHANNEL, msg, onSendMessageSuccess, onError);
+  sender.leave = function() {
+    session.leave(onLeaveSuccess, onError);
+  };
+
+  sender.setUsername = function(username) {
+    sendMessage({
+      type: 'SET_USERNAME',
+      data: { username: username }
+    });
+  };
+
+  sender.loadSet = function(id) {
+    sendMessage({
+      type: 'LOAD_SET',
+      data: { id: id }
+    });
+  };
+
+  sender.startGame = function(type) {
+    sendMessage({
+      type: 'START_GAME',
+      data: { type: type }
+    });
+  };
+
+  sender.submitAnswer = function(correctId, guessedId) {
+    sendMessage({
+      type: 'SUBMIT_ANSWER',
+      data: {
+        correctId: correctId,
+        guessedId: guessedId
+      }
+    });
+  };
+
+  sender.listen = function(messageHandler) {
+    _handleMessage = messageHandler;
   };
 
 })(window);

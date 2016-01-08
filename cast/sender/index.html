@@ -1,7 +1,9 @@
 <html>
   <head>
+    <script type="text/javascript" src="static/lib/jquery-1.11.3.min.js"></script>
     <script type="text/javascript" src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js"></script>
     <script type="text/javascript" src="sender.js"></script>
+    <script type="text/javascript" src="main.js"></script>
   </head>
   <body>
   This is the sender app, swag out
@@ -9,5 +11,17 @@
   <a href="chrome-extension://boadgeojelhgndaghljhdicfkmllpafd/cast_setup/devices.html">Look @ device details</a>
   <br>
   <a href="http://10.1.10.226:9222/">debug chromecast</a>
+  <br>
+  <h1>Quizlet Chromecast</h1>
+  <button id="btn-join">Join Session</button>
+  <button id="btn-leave">Leave Session</button>
+  <br>
+  <input id="inp-username" type="text" placeholder="Enter a username" />
+  <button id="btn-submit-username">Set Username</button>
+  <br>
+  <input id="inp-set-id" type="text" placeholder="Enter a set ID" />
+  <button id="btn-submit-set-id">Load Set</button>
+  <br>
+  <button id="btn-start-game">Start Game</button>
   </body>
 </html>
