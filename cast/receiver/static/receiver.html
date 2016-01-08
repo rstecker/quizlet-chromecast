@@ -5,6 +5,7 @@
   <script src="http://code.jquery.com/jquery-2.0.3.min.js"></script>
   <script src="https://www.gstatic.com/cast/sdk/libs/receiver/2.0.0/cast_receiver.js"></script>
   <script src="lib/knockout.min.js"></script>
+  <script src="game_DUMB.js"></script>
 <style>
 .logs{
   font-family: monospace;
@@ -16,12 +17,15 @@
 <body bgcolor=red>
 <div id="content">
 Set Id: <span data-bind="text: setId"></span><br>
-<div data-bind="visible: set.loaded">
-  Name: <span data-bind="text: set.name"></span><br> [<span data-bind="text: set.id"></span>]
+<div data-bind="visible: set.loaded" style="border:1px solid blue;">
+  Name: <span data-bind="text: set.name"></span><br> [<span data-bind="text: set.id"></span>] w/ <span data-bind="text: terms().length"></span> terms
   by: <span data-bind="text: set.creator"></span>
 </div>
+<div data-bind="visible: isPlaying" style="border: 1px solid red;">
+  Question: <span data-bind="text: currentQuestionText"></span>
+</div>
   <div style="border: 1px solid green;" data-bind="foreach: players">
-    <span data-bind="text: name"></span><sub>[<span data-bind="text: senderId"></sub>] : <span data-bind="text: score"></span>
+    <span data-bind="text: name"></span><sub>[<span data-bind="text: senderId"></sub>] : <span data-bind="text: score"></span><br>
   </div>
 </div>
 HELLO WORLD & QUIZLET!
@@ -30,17 +34,18 @@ Send the receiver a msg of type GET_PROTOCALL to get a list of current valid act
 <div class="logs">
 </div>
 <template id="protocall">
-Current protocall:
+Current protocall.
+
+SENT DO RECEIVER
   LOAD_SET : expects an id
   SET_USERNAME : expects a string
   GET_PROTOCALL : expects nothing, returns this text as 'msg'
+  START_GAME : expects nothing, switches to play mode
+
+SENT TO SENDER
+  GAME_STATE : sends a `reason` string and `state object
 </template>
 <script>
-var gameState = {
-  players: {},
-  state: 'WAITNG',
-  set: null,
-};
 var vm = {
   setId: ko.observable('TBD'),
   set: {
@@ -49,15 +54,23 @@ var vm = {
     name: ko.observable('TBD'),
     creator: ko.observable('TBD'),
   },
+  isPlaying: ko.observable(false),
+  currentQuestionText: ko.observable("TDB"),
+  currentQuestionImage: ko.observable(null),
+  terms: ko.observableArray([]),
   players: ko.observableArray([]),
-  senderIdToPlayerIndex: {},
   playerBySenderId: function(senderId) {
-    return this.players()[this.senderIdToPlayerIndex[senderId]];
+    var players = this.players();
+    // why is javascript find not working for me?!
+    for (var i = 0; i < players.length; ++i) {
+      if (players[i].senderId() == senderId) {
+        return players[i];
+      }
+    }
   }
 }
 ko.applyBindings(vm, document.getElementById('content'))
 function addNewPlayerUI(senderId) {
-  vm.senderIdToPlayerIndex[senderId] = vm.players().length;
   vm.players.push({
     name: ko.observable('TBD'),
     senderId: ko.observable(senderId),  // this will never change so it doesn't really need to be an observable...
@@ -66,10 +79,28 @@ function addNewPlayerUI(senderId) {
 }
 function loadSetUi(setObj) {
   vm.set.loaded(true);
+  vm.isPlaying(false);
   vm.set.id(setObj.id);
   vm.set.name(setObj.title);
   vm.set.creator(setObj.created_by);
+  vm.terms.removeAll();
+  setObj.terms.forEach(function(term){
+    vm.terms.push({
+      def: ko.observable(term.definition),
+      id: ko.observable(term.id),
+      rank: ko.observable(term.rank),
+      term: ko.observable(term.term),
+    });
+  });
 }
+var privateGameState = {
+  currentGame: null,
+};
+var gameState = {
+  players: {},
+  state: 'WAITNG',
+  set: null,
+};
 var quizletClientId = 'BcpDSe7sYr';
 var appConfig = new cast.receiver.CastReceiverManager.Config();
 appConfig.maxInactivity = 10000;
@@ -82,21 +113,19 @@ function displayAction(msg) {
 }
 
 function loadSetData(setId){
+  vm.set.loaded(false);
   vm.setId(setId);
   var url = '/proxy/https://api.quizlet.com/2.0/sets/'+setId+'?client_id='+quizletClientId;
-  $.get(url).done(function(x) {
+  $.get(url)
+  .done(function(x) {
     displayAction( " success" );
     console.log("success w/ ",x);
     gameState.set = x;
     loadSetUi(x);
     broadcastState('set loaded');
   })
-  .fail(function() {
-    displayAction( "error" );
-  })
-  .always(function() {
-    displayAction( "finished" );
-  });
+  .fail(function() { displayAction( "error" ); })
+  .always(function() { displayAction( "finished" ); });
 }
 
 messageBus.onMessage = function(event) {
@@ -104,11 +133,11 @@ messageBus.onMessage = function(event) {
   var message = event.data;
   var senderId = event.senderId;
   if (message.type == 'LOAD_SET') {
-    var setId = message.data;
+    var setId = message.data.id;
     displayAction("User '"+senderId+"' is trying to load set "+setId);
     loadSetData(setId);
   }else if (message.type == 'SET_USERNAME') {
-    var username = message.data;
+    var username = message.data.username;
     // TODO : protect against bad username data somehow?
     displayAction("User '"+senderId+"' is trying to set username to "+username);
     gameState.players[senderId].username = username;
@@ -116,29 +145,97 @@ messageBus.onMessage = function(event) {
     broadcastState('Updated username for '+senderId);
   }else if (message.type == 'GET_PROTOCALL') {
     messageBus.send(senderId, {'msg': $('#protocall').html()});
-  }
-   else {
+  } else if (message.type == 'START_GAME') {
+    var gameType = message.data.type;
+    displayAction("User '"+senderId+"' is trying to START A GAME of type '"+gameType+"'");
+    startGame(gameType);
+  } else if (message.type == 'SUBMIT_ANSWER') {
+    var data = message.data;
+    displayAction("User '"+senderId+"' is trying to answer the Question (correct : "+data.correctID+") with "+data.guessedID);
+    handleAnswer(senderId, data.correctID, data.guessedID);
+  } else {
     displayAction("What you say?? : "+message.type+" :: "+message.data);
   }
 };
 
+function handleAnswer(senderId, correctId, guessedId) {
+  if (!privateGameState.currentGame) {
+    displayAction(" >> no current game running");
+    return;
+  }
+  privateGameState.currentGame.handleAnswer(senderId, correctId, guessedId);
+}
+
+function startGame(gameType) {
+  if (gameType == 'DUMB') {
+    privateGameState.currentGame = game_DUMB;
+  } else {
+    displayAction("> we do not know how to play ".gameType);
+    return;
+  }
+  gameState.state = 'PLAYING';
+  broadcastState("Game begins");
+  privateGameState.currentGame.init(gameState.set, gameState.players);
+}
+
 manager.onSenderConnected = function(evt) {
   var senderId = evt.data;
-  addNewPlayerUI(senderId)
+  if (gameState.players[senderId]) {
+    displayAction("player "+senderId+" just re-connected");
+    broadcastState('re-connected player : '+senderId);
+    return;
+  }
+  addNewPlayerUI(senderId);
   gameState.players[senderId] = {state: 'connected'};
   displayAction("connected w/ "+ senderId);
   document.body.style.backgroundColor = 'black';
   document.body.style.color = 'white';
   broadcastState('new player : '+senderId);
+
+  if (gameState.state == 'PLAYING') {
+    privateGameState.currentGame.addPlayer(senderId, gameState.players[senderId]);
+  }
 };
+
+manager.onSenderDisconnected = function(evt) {
+  var senderId = evt.senderId;
+  vm.players.remove(function (player) {
+    return player.senderId() == senderId;
+  });
+  delete gameState.players[senderId];
+  broadcastState("Player disconnected");
+  displayAction("Sender "+senderId+" has disconnected for reason: "+evt.reason);
+}
 
 function broadcastState(reason) {
   Object.keys(gameState.players).forEach(function(senderId) {
     messageBus.send(senderId, {
-      reason: reason,
-      gameState: gameState,
+      type: 'GAME_STATE',
+      data: {
+        reason: reason,
+        state: gameState,
+      }
     });
   });
+}
+
+// if you don't set a `senderId` param we'll send to all of them
+function broadcastObjective(params) {
+  var msg = {
+    type: 'OBJECTIVE',
+    data: {
+      correctId: params.correctId,
+      possibleIds: params.possibleIds,
+      showDefinition: params.showDefinition,
+    }
+  }
+  if (params.senderId) {
+    messageBus.send(params.senderId, msg);
+  } else {
+    Object.keys(gameState.players).forEach(function(senderId) {
+      messageBus.send(senderId, msg);
+    });
+  }
 }
 manager.start(appConfig);
 </script>
