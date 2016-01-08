@@ -1,162 +1,83 @@
-$('.cast-button').prop('disabled',true)
+// Quizlet Chromecast sender
+// Jan 2016
 
-var reb = {
-  chromecastApplicationId: '243116E9',
-  start: function() {
-    var self = this;
-    _.bindAll(this, 'startCasting', 'startRdio', 'handleNewSession', 'sendMessage', 'pullDetails');
-    $('.cast-button').click(this.startCasting);
-    $('.auth-button').click(this.startRdio);
-    $('.togglePause-button').click(function() {
-      self.sendMessage(JSON.stringify({
-        type: 'playerCommand',
-        name: 'togglePause',
-        arguments: []
-      }))
-    });
-    $('.playSource-button').click(function() {
-      self.sendMessage(JSON.stringify({
-        type: 'playerCommand',
-        name: 'play',
-        arguments: [{source: $('.source-val').val()}]
-      }))
-    });
-    $('.source-val').val('t' + Math.round((Math.random() * 100000)) );
-    $('.random-button').click(function() {
-      $('.source-val').val('t' + Math.round((Math.random() * 100000)) );
-      $('.playingSource-button').click();
-    });
+(function(win) {
 
-    var self = this;
-    sessionRequest = new chrome.cast.SessionRequest(this.chromecastApplicationId);
-    var apiConfig = new chrome.cast.ApiConfig(sessionRequest,
-      function(s) {
-        console.info("[Chromecast] init : session listener ",arguments);
-        if (s) {
-          self.handleNewSession(s);
-        }
-      },
-      function(){
-        console.error("[Chromecast] init: receiver listener ",arguments);
-      }
-    );
-    chrome.cast.initialize(apiConfig,
-      function() {
-        console.info("[Chromecast] session start : on init success ",arguments);
-        $('.cast-button').prop('disabled',false)
-      },
-      function(){
-        console.error("[Chromecast] session start : on error ",arguments);
-      }
-    );
-  },
-  handleNewSession: function(s) {
-    console.log("HandleNewSession ",s);
-    window.sss = s;
-    $('.playing').removeClass('hidden');
-    $('.startup').addClass('hidden');
-    var self = this;
-    self._session = s;
-    s.addMessageListener('urn:x-cast:duck', function(s1, s2) {
-      console.info("[Chromecast] just received a message! " , arguments);
-      var obj = JSON.parse(s2);
-      if (obj.type == 'requestAccessToken') {
-        self.startRdio();
-      }else if (obj.type == 'playingTrack') {
-        self.pullDetails(obj.key)
-      }
-    });
-  },
-  // type: playerCommand, name: methodName, arguments: []
-  sendMessage: function(msg) {
-    this._session.sendMessage('urn:x-cast:duck', msg,
-      function() {
-        console.info("[Chromecast] msg send : success ",arguments);
-      },
-      function() {
-        console.info("[Chromecast] msg send : failure ",arguments);
-      }
-    );
-  },
-  startRdio: function() {
-    // var self = this;
-    // R.ready(function() {
-    //   console.info("[Rdio] -- checking the current user " + R.currentUser.get('key'));
-    //   if (R.authenticated()) {
-    //     console.info("[Rdio] I am authenticated : " + R.accessToken());
-    //     self.sendMessage(JSON.stringify({ type: 'accessToken', value: R.accessToken() }));
-    //   } else {
-    //     console.info("[Rdio] I am NOT authenticated");
-    //     R.authenticate(function(authenticated) {
-    //       console.info("[Rdio] authenticated callback -- " , authenticated);
-    //     });
-    //   }
-    // });
-  },
-  startCasting: function() {
-    var self = this;
-    console.log(" start casting");
-    chrome.cast.requestSession(
-      function(s){
-        console.error("[Chromecast] request session : success ",arguments);
-        self.handleNewSession(s);
-      },
-      function(){
-        console.error("[Chromecast] on launch error ",arguments);
-      }
-    );
-  },
-  pullDetails: function(key) {
-    var self = this;
-    R.request({
-      method: "get",
-      content: {
-        keys: key
-      },
-      success: function(response) {
-        if (self.lastPlay && self.prevObj) {
-          var diff = (new Date().getTime() - self.lastPlay.getTime()) / 1000.0;
-          $('.history .played:last').append("<span class='duration'>"+Math.round(diff)+" of "+self.prevObj.duration+" seconds</span>");
-        }
-        var obj = response.result[key];
-        self.prevObj = obj;
-        console.log(" succes  ", response);
-        $('.name-val').text(obj.name);
-        $('.key-val').text(obj.key);
-        $('.artist-val').text(obj.artist);
-        $('.album-val').text(obj.album);
-        $('.duration-val').text(obj.duration + "s");
-        $('.can-stream-val').text(obj.canStream);
-        $('.artwork-val').attr('src',obj.icon);
+  // Constants
+  var APP_ID = '243116E9';
+  var CHANNEL = 'urn:x-cast:duck';
 
-        var line = "<span class='detail'>"+obj.name+"</span> from <span class='detail'>"+obj.album+"</span> by <span class='detail'>"+obj.artist+"</span> [<span class='detail'>"+obj.key+"</span>]";
-        if (!obj.canStream) {
-          line = "<s>"+line+"</s>";
-        }
-        $('.history').append("<div class='played'>"+line+"</div>");
-        $('.source-val').val('t' + Math.round((Math.random() * 100000)) );
+  // The Chromecast session
+  var session;
 
-        self.lastPlay = new Date();
-      },
-      error: function(response) {
-        console.error(" failure ", response);
-      }
-    });
+  // Logger
+  function log(msg) {
+    console.log('[Chromecast] '+msg);
   }
-};
 
-/*
+  // Listeners
+  function receiverListener(e) {
+    if (e === chrome.cast.ReceiverAvailability.AVAILABLE) {
+      log('Receiver available');
+    }
+  }
 
-// rebecca http://192.168.42.114:8000/cast/receiver/
-// adam    http://192.168.42.66:8000/cast/receiver/
+  function onSession(e) {
+    log('Session connected');
+    session = e;
+    e.addMessageListener(CHANNEL, handleMessage);
+    if (session.status !== chrome.cast.SessionStatus.CONNECTED) {
+      log('Session disconnected');
+    }
+  }
 
-R.currentUser.get('key')
-R.player.play({ source: 't12523' })
+  function onInitSuccess() {
+    log('Initialized');
+  }
 
-R.player.playingSource().get('duration')
+  function onStopSuccess() {
+    log('Session stopped');
+  }
 
+  function onSendMessageSuccess() {
+    log('Message sent');
+  }
 
+  function onError(e) {
+    log('Error: '+e.code+', '+e.description);
+  }
 
-https://www.rdio.com/oauth2/authorize?response_type=token&client_id=uJQhJrLf20C_re-6XjUvcA&redirect_uri=http://localhost:8000/cast/sender/
+  win['__onGCastApiAvailable'] = function(loaded, errorInfo) {
+    if (loaded) {
+      initCastApi();
+    } else {
+      log(errorInfo);
+    }
+  };
 
-*/
+  // Message handler
+  function handleMessage(channel, msg) {
+    log(msg);
+  }
+
+  // Initializes the Chromecast API
+  function initCastApi() {
+    var sessionRequest = new chrome.cast.SessionRequest(APP_ID);
+    var apiConfig = new chrome.cast.ApiConfig(sessionRequest, onSession, receiverListener);
+    chrome.cast.initialize(apiConfig, onInitSuccess, onError);
+  }
+
+  // SENDER ACTIONS
+  var launch = win.launch = function() {
+    chrome.cast.requestSession(onSession, onError);
+  };
+
+  var stopApp = win.stopApp = function() {
+    session.stop(onStopSuccess, onError);
+  };
+
+  var sendMessage = win.sendMessage = function(msg) {
+    session.sendMessage(CHANNEL, msg, onSendMessageSuccess, onError);
+  };
+
+})(window);

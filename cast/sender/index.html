@@ -1,36 +1,13 @@
-<!DOCTYPE html>
 <html>
   <head>
-    <title>Sample Music Player : Sender</title>
-
-    <link rel="stylesheet/less" type="text/css" href="sender.less">
     <script type="text/javascript" src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js"></script>
-
-    <script src="../../lib/jquery-1.9.1.min.js"></script>
-    <script src="../../lib/underscore-min.js"></script>
-    <script src="../../lib/less-1.3.0.min.js"></script>
-
-    <script src="sender.js"></script>
+    <script type="text/javascript" src="sender.js"></script>
   </head>
-  <body onload="reb.start()">
-    <div class="startup" disabled>
-      click the button to
-      <button class="cast-button">CAST TO CHROMECAST</button><br>
-    </div>
-    <div class="playing hidden">
-      <button class="togglePause-button">Play / Pause</button><br><br>
-      <input type="text" class="source-val"> <button class="random-button">randomize</button><button class="playSource-button">Play Source</button><br><br>
-      <div class='details'>
-        <span class="api-field">Track name</span>: <span class="api-value name-val"></span><br>
-        <span class="api-field">Key</span>: <span class="api-value key-val"></span><br>
-        <span class="api-field">Artist name</span>: <span class="api-value artist-val"></span><br>
-        <span class="api-field">Album name</span>: <span class="api-value album-val"></span><br>
-        <span class="api-field">Duration</span>: <span class="api-value duration-val"></span><br>
-        <span class="api-field">Can Stream</span>: <span class="api-value can-stream-val"></span><br>
-        <span class="api-field">Album artwork</span>: <span class="api-value"><img src="" class="artwork-val"></span><br>
-      </div>
-      <div class='history'>
-      </div>
-    </div>
+  <body>
+  This is the sender app, swag out
+  <br>
+  <a href="chrome-extension://boadgeojelhgndaghljhdicfkmllpafd/cast_setup/devices.html">Look @ device details</a>
+  <br>
+  <a href="http://10.1.10.226:9222/">debug chromecast</a>
   </body>
 </html>
