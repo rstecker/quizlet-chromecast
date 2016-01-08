@@ -1,80 +1,75 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <title>Sample Music Player : Receiver</title>
-    <script src="http://code.jquery.com/jquery-2.0.3.min.js"></script>
+<head>
+  <title>Quizlet AWESOME</title>
+  <script src="http://code.jquery.com/jquery-2.0.3.min.js"></script>
+  <script src="https://www.gstatic.com/cast/sdk/libs/receiver/2.0.0/cast_receiver.js"></script>
+</head>
+<body bgcolor=red>
+<BR>
+HELLO WORLD & QUIZLET! 1
+<script>
+var gameState = {
+  players: {},
+  state: 'WAITNG',
+  set: null,
+};
+var quizletClientId = 'BcpDSe7sYr';
+var appConfig = new cast.receiver.CastReceiverManager.Config();
+appConfig.maxInactivity = 10000;
+appConfig.statusText = "Quizlet Hack Day";
+var manager = cast.receiver.CastReceiverManager.getInstance();
+var messageBus = manager.getCastMessageBus('urn:x-cast:duck', cast.receiver.CastMessageBus.MessageType.JSON);
 
-    <script src="https://www.gstatic.com/cast/sdk/libs/receiver/2.0.0/cast_receiver.js"></script>
-    <script src="https://rdio.com/api/api.js?client_id=uJQhJrLf20C_re-6XjUvcA"></script>
-    <script>
-      R.accessToken('none');
-    </script>
-  </head>
-  <body bgcolor=red>
-  HELLO WORLD & QUIZLET!
-    <script>
-      function playingTrackMessage(track) {
-        return {
-          type: 'playingTrack',
-          key: track.get('key'),
-        };
-      }
+function displayAction(msg) {
+  $('body').prepend('<div>'+msg+'</div>');
 
-      function setUpPlayerHandler() {
-        R.player.on('change:playingTrack', function(track) {
-          if (!track) {
-            console.log('Got null track');
-            return;
-          }
+}
 
-          messageBus.broadcast(playingTrackMessage(track));
-          var row = document.createElement('div');
-          row.textContent = track.get('name') + ' - ' + track.get('album') + ' - ' + track.get('artist');
-          document.querySelector('#trackLog').appendChild(row);
-          document.querySelector('#cover').src = track.get('icon');
-          document.querySelector('#time').textContent = track.get('duration');
-        });
-      }
+function loadSetData(setId){
+  var url = 'proxy/https://api.quizlet.com/2.0/sets/'+setId+'?client_id='+quizletClientId;
+  $.get(url, function(x) {
+    displayAction("done ");
+  }).done(function() {
+    displayAction( "second success" );
+  })
+  .fail(function() {
+    displayAction( "error" );
+  })
+  .always(function() {
+    displayAction( "finished" );
+  });
+}
 
-      var appConfig = new cast.receiver.CastReceiverManager.Config();
-      appConfig.maxInactivity = 10000;
-      appConfig.statusText = "Quizlet Hack Day";
-      var manager = cast.receiver.CastReceiverManager.getInstance();
-      var messageBus = manager.getCastMessageBus('urn:x-cast:duck', cast.receiver.CastMessageBus.MessageType.JSON);
+messageBus.onMessage = function(event) {
+  var message = event.data;
+  if (message.type == 'LOAD_SET') {
+    var setId = message.data;
+    displayAction("Trying to load set "+setId);
+    loadSetData(setId);
+  } else {
+    displayAction("What you say?? : "+message.type+" :: "+message.data);
+  }
+};
 
-      messageBus.onMessage = function(event) {
-        var message = event.data;
-        $('body').append("MESSAGE !! " + message);
-        $('body').append(message.type+"<br>");
-        $('body').append(message.value+"<br>");
-        $('body').append(message.arguments+"<br>");
-        $('body').append(message.name+"<br>");
-        if (message.type == 'accessToken') {
-          R.accessToken(message.value);
-        } else if (message.type == 'playerCommand') {
-          R.player[message.name].apply(R.player, message.arguments);
-        }
-      };
+manager.onSenderConnected = function(evt) {
+  var senderId = evt.data;
+  gameState.players[senderId] = {state: 'connected'};
+  displayAction("connected w/ "+ senderId);
+  document.body.style.backgroundColor = 'black';
+  document.body.style.color = 'white';
+  broadcastState('new player : '+senderId);
+};
 
-      manager.onSenderConnected = function(evt) {
-        $('body').append("connected!!");
-        document.body.style.backgroundColor = 'black';
-        document.body.style.color = 'white';
-        var senderId = evt.data;
-        if (!R.authenticated()) {
-          messageBus.send(senderId, {type: 'requestAccessToken'});
-
-          R.on('change:authenticated', function(authed) {
-            R.ready(setUpPlayerHandler);
-          });
-        } else if (R.ready() && R.player.playingTrack()) {
-          messageBus.send(senderId, playingTrackMessage(R.player.playingTrack()));
-        }
-      };
-      manager.start(appConfig);
-    </script>
-  </body>
-  <div style="float: right; margin: 50px 50px 0 0;" id=time></div>
-  <img style="float: left; margin: 50px 0 0 50px;" width=200 height=200 id=cover>
-  <center style="margin-top: 50px" id=trackLog></center>
+function broadcastState(reason) {
+  Object.keys(gameState.players).forEach(function(senderId) {
+    messageBus.send(senderId, {
+      reason: reason,
+      gameState: gameState,
+    });
+  });
+}
+manager.start(appConfig);
+</script>
+</body>
 </html>
