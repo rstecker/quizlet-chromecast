@@ -23,6 +23,9 @@ Set Id: <span data-bind="text: setId"></span><br>
 </div>
 <div data-bind="visible: isPlaying" style="border: 1px solid red;">
   Question: <span data-bind="text: currentQuestionText"></span>
+  <div data-bind="if: currentQuestionImage">
+    <img data-bind="attr: {src: currentQuestionImage().url, height: currentQuestionImage().h, width: currentQuestionImage().w }">
+  </div>
 </div>
   <div style="border: 1px solid green;" data-bind="foreach: players">
     <span data-bind="text: name"></span><sub>[<span data-bind="text: senderId"></sub>] : <span data-bind="text: score"></span><br>
