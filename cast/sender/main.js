@@ -43,8 +43,30 @@
   function handleMessage(message) {
     if (message.type === 'GAME_STATE') {
       gameState = message.data.state;
+      console.log(gameState);
+    } else if (message.type === 'OBJECTIVE') {
+      displayQuestion(message.data.correctId, message.data.possibleIds, !message.data.showDefinition);
     }
-  };
+  }
+
+  // UI stuff
+  function displayQuestion(correctId, possibleIds, showDefinition) {
+    console.log(showDefinition);
+    var correctTerm = gameState.set.terms.find(function(term) { return term.id === correctId; });
+    var questionPrompt = !showDefinition ? correctTerm.definition : correctTerm.term;
+    var choices = possibleIds.map(function(id) {
+      return gameState.set.terms.find(function(term) { return term.id === id; });
+    });
+    choices.map(function(term) {
+      var choiceText = showDefinition ? term.definition : term.term;
+      var li = $('<li>').text(choiceText);
+      li.click(function() {
+        sender.submitAnswer(correctId, term.id);
+      });
+      $('#disp-question-choices').append(li);
+    });
+    $('#disp-question-prompt').text(questionPrompt);
+  }
 
   // Call init on page load
   $(doc).ready(init);
