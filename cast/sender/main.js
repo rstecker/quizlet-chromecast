@@ -57,6 +57,7 @@
     var choices = possibleIds.map(function(id) {
       return gameState.set.terms.find(function(term) { return term.id === id; });
     });
+    $('#disp-question-choices').empty();
     choices.map(function(term) {
       var choiceText = showDefinition ? term.definition : term.term;
       var li = $('<li>').text(choiceText);
