@@ -73,7 +73,7 @@ game_DUMB = {
     });
     vm.isPlaying(true);
     var term = this.termById[this.currentCorrect];
-    vm.currentQuestionText("What is the answer to: " + ((this.currentlyShowDefinition) ? term.definition : term.term));
+    vm.currentQuestionText((this.currentlyShowDefinition) ? term.definition : term.term);
     if (this.currentlyShowDefinition && term.image) {
       vm.currentQuestionImage({
         url: term.image.url,

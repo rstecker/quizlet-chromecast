@@ -13,29 +13,116 @@
   margin-left: 25px;
   font-size: 12px;
 }
+body {
+  background-color: black;
+  color: white;
+  margin: 0px;
+  font-family: 'lucida grande', 'lucida sans unicode', arial, sans-serif;
+}
+.content {
+  position: absolute;
+  bottom: 0px;
+  width: 74%;
+  left: 0px;
+  height: 100%;
+  margin-right: 10px;
+}
+.players {
+  background-color: #2B7BE4;
+  position: fixed;
+  right: 0px;
+  bottom: 0px;
+  width: 25%;
+  top: 0px;
+  height: 100%;
+  padding: 20px;
+}
+.player {
+  font-size: 40pt;
+  padding-left: 15%;
+}
+#content {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  bottom: 0px;
+}
+.debugger {
+  display: none;
+  position: fixed;
+  bottom: 0px;
+  left: 0px;
+  right: 0px;
+  height: 20%;
+}
+.vcent {
+  display: inline-block;
+  vertical-align: middle;
+  line-height: normal;
+}
+.full {
+  width: 100%;
+  height: 100%;
+}
+.table {
+  width: 100%;
+  height: 100%;
+  display: table;
+}
+.centered-cell {
+  display: table-cell;
+  vertical-align: middle;
+  text-align: center;
+}
+.footnote {
+  position: absolute;
+  bottom: 5%;
+  right: 5%;
+  font-size: 30pt;
+}
+.umph {
+  font-weight: bold;
+}
 </style>
 </head>
-<body bgcolor=red>
+<body>
 <div id="content">
-Set Id: <span data-bind="text: setId"></span><br>
-<div data-bind="visible: set.loaded" style="border:1px solid blue;">
-  Name: <span data-bind="text: set.name"></span><br> [<span data-bind="text: set.id"></span>] w/ <span data-bind="text: terms().length"></span> terms
-  by: <span data-bind="text: set.creator"></span>
-</div>
-<div data-bind="visible: isPlaying" style="border: 1px solid red;">
-  Question: <span data-bind="text: currentQuestionText"></span>
-  <div data-bind="if: currentQuestionImage">
-    <img data-bind="attr: {src: currentQuestionImage().url, height: currentQuestionImage().h, width: currentQuestionImage().w }">
+  <div class="content">
+    <div style="position: absolute; left:0px; right: 0px; text-align:center;"><img style="width: 20%;" src="https://lh6.ggpht.com/coxZGpb0KHEQKnncJYqe2Bc-z_lkZ64A69Mh0BpJyieZHmPc5JYuVcGEJ6ywG466zA=w300"></div>
+    <div class="table" data-bind="visible: state() == 'WAITING'">
+      <span style="font-size: 50pt;"class="centered-cell">Load Set</span>
+    </div>
+    <div class="full" data-bind="visible: state() == 'LOADED' && set.loaded()">
+      <div class="table"><span style="font-size: 50pt" class="centered-cell" data-bind="text: set.name"></span></div>
+      <div class="footnote">Created by <span class="umph" data-bind="text: set.creator"></span>, <span class="umph" data-bind="text: terms().length"></span> terms</div>
+    </div>
+    <div style="padding-top: 20%;" class="table" data-bind="visible: state() == 'PLAYING'">
+      <div class="centered-cell">
+        <div style="font-size: 50pt; padding: 5%" data-bind="text: currentQuestionText"></div>
+        <div data-bind="if: currentQuestionImage">
+          <img data-bind="attr: {src: currentQuestionImage().url, height: currentQuestionImage().h, width: currentQuestionImage().w }">
+        </div>
+      </div>
+    </div>
   </div>
-</div>
-  <div style="border: 1px solid green;" data-bind="foreach: players">
-    <span data-bind="text: name"></span><sub>[<span data-bind="text: senderId"></sub>] : <span data-bind="text: score"></span><br>
+  <div class="players">
+    <div style="font-size: 44pt; padding-top: 97%; width: 100%; text-align: center;" data-bind="visible: !hasValidPlayers()">
+      join now
+    </div>
+    <div data-bind="visible: hasValidPlayers">
+      <div style="font-size: 50pt; padding-bottom: 5%">Players</div>
+      <div class="player" data-bind="foreach: players">
+        <div data-bind="visible: name">
+          <span data-bind="text: name"></span> <span data-bind="visible: $parent.state() == 'PLAYING', text: score"></span>
+        </div>
+      </div>
+    </div>
   </div>
+
 </div>
-HELLO WORLD & QUIZLET!
-<br>
-Send the receiver a msg of type GET_PROTOCALL to get a list of current valid actions
-<div class="logs">
+<div class="debugger">
+  <div class="logs">
+  </div>
 </div>
 <template id="protocall">
 Current protocall.
@@ -51,6 +138,7 @@ SENT TO SENDER
 </template>
 <script>
 var vm = {
+  state: ko.observable('WAITING'),
   setId: ko.observable('TBD'),
   set: {
     loaded: ko.observable(false),
@@ -73,10 +161,16 @@ var vm = {
     }
   }
 }
+vm.hasValidPlayers = ko.computed(function() {
+  return vm.players().reduce(function(prev, cur){
+    console.log("prev : ", prev, " & cur ", cur, " = ", !!cur.name())
+    return prev || !!cur.name();
+  }, false);
+}),
 ko.applyBindings(vm, document.getElementById('content'))
 function addNewPlayerUI(senderId) {
   vm.players.push({
-    name: ko.observable('TBD'),
+    name: ko.observable(false),
     senderId: ko.observable(senderId),  // this will never change so it doesn't really need to be an observable...
     score: ko.observable(0),
   })
@@ -102,7 +196,7 @@ var privateGameState = {
 };
 var gameState = {
   players: {},
-  state: 'WAITNG',
+  state: 'WAITING',
   set: null,
 };
 var quizletClientId = 'BcpDSe7sYr';
@@ -128,6 +222,7 @@ function loadSetData(setId){
     loadSetUi(x);
     gameState.state = 'LOADED';
     broadcastState('set loaded');
+    vm.state('LOADED');
   })
   .fail(function() { displayAction( "error" ); })
   .always(function() { displayAction( "finished" ); });
@@ -183,6 +278,7 @@ function startGame(gameType) {
   gameState.state = 'PLAYING';
   broadcastState("Game begins");
   privateGameState.currentGame.init(gameState.set, gameState.players);
+  vm.state('PLAYING');
 }
 
 manager.onSenderConnected = function(evt) {
