@@ -1,31 +1,54 @@
 <html>
   <head>
+    <title>Quizlet Chromecast</title>
+    <link rel="stylesheet" type="text/css" href="static/main.css">
     <script type="text/javascript" src="static/lib/jquery-1.11.3.min.js"></script>
     <script type="text/javascript" src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js"></script>
-    <script type="text/javascript" src="sender.js"></script>
-    <script type="text/javascript" src="main.js"></script>
+    <script type="text/javascript" src="static/sender.js"></script>
+    <script type="text/javascript" src="static/main.js"></script>
   </head>
   <body>
-  This is the sender app, swag out
-  <br>
-  <a href="chrome-extension://boadgeojelhgndaghljhdicfkmllpafd/cast_setup/devices.html">Look @ device details</a>
-  <br>
-  <a href="http://10.1.10.226:9222/">debug chromecast</a>
-  <br>
-  <h1>Quizlet Chromecast</h1>
-  <button id="btn-join">Join Session</button>
+<!--
   <button id="btn-leave">Leave Session</button>
-  <br>
-  <input id="inp-username" type="text" placeholder="Enter a username" />
-  <button id="btn-submit-username">Set Username</button>
-  <br>
-  <input id="inp-set-id" type="text" placeholder="Enter a set ID" />
-  <button id="btn-submit-set-id">Load Set</button>
-  <br>
-  <button id="btn-start-game">Start Game</button>
-  <br>
+
   <h2>Question</h2>
-  <span id="disp-question-prompt"></span>
-  <ul id="disp-question-choices"></ul>
+  <ul id="disp-question-choices"></ul> -->
+
+
+
+
+
+    <div id="screen-join" class="screen">
+      <div class="logo">Quizlet Chromecast</div>
+      <div class="center">
+        <input id="inp-username" class="input-text" type="text" placeholder="Enter a username">
+        <br>
+        <button id="btn-join" class="button">Join</button>
+      </div>
+    </div>
+
+    <div id="screen-start" class="screen">
+      <div class="logo">Quizlet Chromecast</div>
+      <div class="center">
+        <input id="inp-set-id" class="input-text" type="text" placeholder="Enter a set ID">
+        <br>
+        <button id="btn-submit-set-id" class="button">Load Set</button>
+        <br>
+        <button id="btn-start-game" class="button">Start Game</button>
+      </div>
+    </div>
+
+    <div id="screen-playing" class="screen">
+      <div class="header">
+        <span id="disp-place"></span> -
+        <span id="disp-score"></span><span class="small"> points</span>
+      </div>
+      <div id="disp-question-prompt"></div>
+      <div id="disp-question-choices">
+        <button class="answer-choice">Choice 1</button>
+        <button class="answer-choice">Choice 2</button>
+      </div>
+      exit | restart
+    </div>
   </body>
 </html>

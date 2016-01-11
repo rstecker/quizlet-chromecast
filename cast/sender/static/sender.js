@@ -62,6 +62,11 @@
     }
   };
 
+  win.addEventListener('beforeunload', function() {
+    if (session) sender.leave();
+    return 'Leaving the page will disconnect you from the session.';
+  });
+
   // Messaging
   var _handleMessage = function() {};
 
@@ -82,8 +87,11 @@
   }
 
   // SENDER ACTIONS
-  sender.join = function() {
-    chrome.cast.requestSession(onSession, onError);
+  sender.join = function(callback) {
+    chrome.cast.requestSession(function(e) {
+      onSession(e);
+      callback();
+    }, onError);
   };
 
   sender.stopSession = function() {
