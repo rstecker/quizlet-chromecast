@@ -5,6 +5,7 @@
   <script src="http://code.jquery.com/jquery-2.0.3.min.js"></script>
   <script src="https://www.gstatic.com/cast/sdk/libs/receiver/2.0.0/cast_receiver.js"></script>
   <script src="lib/knockout.min.js"></script>
+  <script src="lib/moment.js"></script>
   <script src="game_DUMB.js"></script>
   <script src="game_QUIZUP.js"></script>
 <style>
@@ -40,6 +41,13 @@ body {
 .player {
   font-size: 40pt;
   padding-left: 15%;
+  position: relative;
+}
+.score {
+  position: absolute;
+  right: 5%;
+  font-size: 30pt;
+  background-color: #2B7BE4;
 }
 #content {
   position: absolute;
@@ -83,6 +91,45 @@ body {
 .umph {
   font-weight: bold;
 }
+.winning {
+  width: 50px;
+  height: 50px;
+  position: absolute;
+  left: -4%;
+  margin-top: 1%;
+  background-image: url(http://www.cad27.com/Star%20sparkle.gif);
+  background-size: cover;
+}
+.user-answer-state {
+  text-align: center;
+  display: inline-block;
+  padding: 0px 20px;
+}
+.user-answer-state .player {
+  color: #BBCED8;
+  font-size: 30pt;
+  font-size: 30pt;
+}
+.user-answer-state.answered .player {
+  font-size: 35pt;
+  color: #B57CE3;
+}
+.user-answer-state.correct .player {
+  color: #25A73A;
+  font-size: 35pt;
+}
+.user-answer-state.incorrect .player {
+  color: #E84E56;
+}
+.time {
+  color: #2B7BE4;
+}
+.extra {
+  position: absolute;
+  bottom: 5%;
+  width: 100%;
+  text-align: center;
+}
 </style>
 </head>
 <body>
@@ -102,6 +149,7 @@ body {
         <div data-bind="if: currentQuestionImage">
           <img data-bind="attr: {src: currentQuestionImage().url, height: currentQuestionImage().h, width: currentQuestionImage().w }">
         </div>
+        <div class="extra" data-bind="html: currentQuestionExtra"></div>
       </div>
     </div>
   </div>
@@ -113,7 +161,9 @@ body {
       <div style="font-size: 50pt; padding-bottom: 5%">Players</div>
       <div class="player" data-bind="foreach: players">
         <div data-bind="visible: name">
-          <span data-bind="text: name"></span> <span data-bind="visible: $parent.state() == 'PLAYING', text: score"></span>
+          <div class="winning" data-bind="visible: isWinning() && $parent.state() == 'PLAYING' && score() > 0"></div>
+          <div class="score" data-bind="visible: $parent.state() == 'PLAYING', text: score"></div>
+          <span data-bind="text: name"></span>
         </div>
       </div>
     </div>
@@ -148,6 +198,7 @@ var vm = {
   },
   isPlaying: ko.observable(false),
   currentQuestionText: ko.observable("TDB"),
+  currentQuestionExtra: ko.observable(null),
   currentQuestionImage: ko.observable(null),
   terms: ko.observableArray([]),
   players: ko.observableArray([]),
@@ -169,11 +220,18 @@ vm.hasValidPlayers = ko.computed(function() {
 }),
 ko.applyBindings(vm, document.getElementById('content'))
 function addNewPlayerUI(senderId) {
-  vm.players.push({
-    name: ko.observable(false),
-    senderId: ko.observable(senderId),  // this will never change so it doesn't really need to be an observable...
-    score: ko.observable(0),
-  })
+  vm.players.push(new PlayerVM(senderId));
+}
+function PlayerVM(senderId) {
+  this.name = ko.observable(false);
+  this.senderId = ko.observable(senderId);  // this will never change so it doesn't really need to be an observable...
+  this.score = ko.observable(0);
+  this.isWinning = ko.computed(function() {
+    var maxScore = vm.players().reduce(function(prev, cur) {
+      return (cur.score() > prev) ? cur.score() : prev;
+    }, -9999);
+    return maxScore == this.score();
+  }, this);
 }
 function loadSetUi(setObj) {
   vm.set.loaded(true);
@@ -277,6 +335,7 @@ function startGame(gameType) {
   }
   gameState.state = 'PLAYING';
   broadcastState("Game begins");
+  // TODO : clear scores
   privateGameState.currentGame.init(gameState.set, gameState.players);
   vm.state('PLAYING');
 }
