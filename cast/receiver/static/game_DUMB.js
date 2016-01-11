@@ -8,7 +8,6 @@ game_DUMB = {
   currentlyShowDefinition: false,
   init: function(set, players){
     this.remainingQuestions = [];
-    this.remainingAnswers = [];
     this.termById = {};
     set.terms.forEach(function(term){
       game_DUMB.remainingQuestions.push(term.id);
@@ -35,7 +34,7 @@ game_DUMB = {
       senderId: senderId,
       correctId: this.currentCorrect,
       possibleIds: this.currentQuestionSet,
-      showDefinition: showDefinition,
+      showDefinition: this.currentlyShowDefinition,
     });
   },
   _handleEndGame: function() {

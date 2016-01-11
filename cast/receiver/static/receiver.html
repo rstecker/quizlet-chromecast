@@ -6,6 +6,7 @@
   <script src="https://www.gstatic.com/cast/sdk/libs/receiver/2.0.0/cast_receiver.js"></script>
   <script src="lib/knockout.min.js"></script>
   <script src="game_DUMB.js"></script>
+  <script src="game_QUIZUP.js"></script>
 <style>
 .logs{
   font-family: monospace;
@@ -125,6 +126,7 @@ function loadSetData(setId){
     console.log("success w/ ",x);
     gameState.set = x;
     loadSetUi(x);
+    gameState.state = 'LOADED';
     broadcastState('set loaded');
   })
   .fail(function() { displayAction( "error" ); })
@@ -155,7 +157,7 @@ messageBus.onMessage = function(event) {
   } else if (message.type == 'SUBMIT_ANSWER') {
     var data = message.data;
     displayAction("User '"+senderId+"' is trying to answer the Question (correct : "+data.correctID+") with "+data.guessedID);
-    handleAnswer(senderId, data.correctID, data.guessedID);
+    handleAnswer(senderId, data.correctId, data.guessedId);
   } else {
     displayAction("What you say?? : "+message.type+" :: "+message.data);
   }
@@ -172,6 +174,8 @@ function handleAnswer(senderId, correctId, guessedId) {
 function startGame(gameType) {
   if (gameType == 'DUMB') {
     privateGameState.currentGame = game_DUMB;
+  } else if (gameType == 'QUIZUP') {
+    privateGameState.currentGame = game_QUIZUP;
   } else {
     displayAction("> we do not know how to play ".gameType);
     return;
