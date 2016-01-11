@@ -8,16 +8,6 @@
     <script type="text/javascript" src="static/main.js"></script>
   </head>
   <body>
-<!--
-  <button id="btn-leave">Leave Session</button>
-
-  <h2>Question</h2>
-  <ul id="disp-question-choices"></ul> -->
-
-
-
-
-
     <div id="screen-join" class="screen">
       <div class="logo">Quizlet Chromecast</div>
       <div class="center">
@@ -40,15 +30,14 @@
 
     <div id="screen-playing" class="screen">
       <div class="header">
-        <span id="disp-place"></span> -
+        <span id="disp-place"></span><span id="disp-place-suffix" class="small"></span>
+        &middot;
         <span id="disp-score"></span><span class="small"> points</span>
       </div>
       <div id="disp-question-prompt"></div>
-      <div id="disp-question-choices">
-        <button class="answer-choice">Choice 1</button>
-        <button class="answer-choice">Choice 2</button>
-      </div>
-      exit | restart
+      <div id="disp-question-choices"></div>
+      <button id="btn-exit" class="button">Exit</button>
+      <button id="btn-restart" class="button">Restart</button>
     </div>
   </body>
 </html>
