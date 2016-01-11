@@ -12,30 +12,46 @@
   function init() {
     bindEventListeners();
     sender.listen(handleMessage);
+    showScreen('join');
   }
 
-  // Binds all event listeners for the page
+  // Screens
+  function showScreen(name) {
+    $('.screen').hide();
+    $('#screen-'+name).show();
+  }
+
+  // Event listeners
+  function onSubmitJoin() {
+    var username = $('#inp-username').val();
+    sender.join(function() {
+      sender.setUsername(username);
+      showScreen('start');
+    });
+  }
+
+  function onSubmitSetId() {
+    var setId = parseInt($('#inp-set-id').val(), 10);
+    sender.loadSet(setId);
+  }
+
   function bindEventListeners() {
-    $('#btn-join').click(function() {
-      sender.join();
+    $('#btn-join').click(onSubmitJoin);
+    $('#inp-username').keypress(function(e) {
+      if (e.which === 13) onSubmitJoin();
     });
 
     $('#btn-leave').click(function() {
       sender.leave();
     });
 
-    $('#btn-submit-username').click(function() {
-      var username = $('#inp-username').val();
-      sender.setUsername(username);
-    });
-
-    $('#btn-submit-set-id').click(function() {
-      var setId = parseInt($('#inp-set-id').val(), 10);
-      sender.loadSet(setId);
+    $('#btn-submit-set-id').click(onSubmitSetId);
+    $('#inp-set-id').keypress(function(e) {
+      if (e.which === 13) onSubmitSetId();
     });
 
     $('#btn-start-game').click(function() {
-      sender.startGame('DUMB');
+      sender.startGame('QUIZUP');
     });
   }
 
@@ -43,6 +59,7 @@
   function handleMessage(message) {
     if (message.type === 'GAME_STATE') {
       gameState = message.data.state;
+      if (gameState.state === 'PLAYING') showScreen('playing');
       console.log(gameState);
     } else if (message.type === 'OBJECTIVE') {
       displayQuestion(message.data.correctId, message.data.possibleIds, !message.data.showDefinition);
@@ -51,7 +68,6 @@
 
   // UI stuff
   function displayQuestion(correctId, possibleIds, showDefinition) {
-    console.log(showDefinition);
     var correctTerm = gameState.set.terms.find(function(term) { return term.id === correctId; });
     var questionPrompt = !showDefinition ? correctTerm.definition : correctTerm.term;
     var choices = possibleIds.map(function(id) {
@@ -60,11 +76,11 @@
     $('#disp-question-choices').empty();
     choices.map(function(term) {
       var choiceText = showDefinition ? term.definition : term.term;
-      var li = $('<li>').text(choiceText);
-      li.click(function() {
+      var el = $('<button>').addClass('answer-choice').text(choiceText);
+      el.click(function() {
         sender.submitAnswer(correctId, term.id);
       });
-      $('#disp-question-choices').append(li);
+      $('#disp-question-choices').append(el);
     });
     $('#disp-question-prompt').text(questionPrompt);
   }
