@@ -24,6 +24,10 @@ game_QUIZUP = {
       correctId: correctId,
       time: new Date(),
     }
+    gameState.players[senderId].answers.push({
+      correct: correctId == guessedId,
+      sec: moment.duration(new Date() - game_QUIZUP.currentAskedTime).asSeconds()
+    });
     this._handleChange();
   },
   removePlayer: function(senderId) {
@@ -94,9 +98,11 @@ game_QUIZUP = {
     this._startCountDown();
   },
   _startCountDown: function() {
+    if (game_QUIZUP.isCounting) { return; }
+    game_QUIZUP.isCounting = true;
     $(".countDown").remove();
     $("body").append("<div class='countDown'></div>");
-    var max = 10;
+    var max = 5;
     for(var i = 1; i <= max; ++i) {
       (function(t) {
         console.log(".... ",t);
@@ -106,6 +112,7 @@ game_QUIZUP = {
     setTimeout(function() {
       console.log("GO!");
       $(".countDown").remove();
+      game_QUIZUP.isCounting = false;
       game_QUIZUP._handOutQuestions();
     }, max * 1000);
   },
@@ -135,8 +142,10 @@ game_QUIZUP = {
     vm.currentQuestionText("GAME OVER");
     gameState.state = 'ENDED';
     broadcastState('Game over, man. Game over');
+    reportPlayerStats();
   },
   _handOutQuestions: function() {
+    if (game_QUIZUP.isCounting) { return; }
     vm.currentQuestionExtra("");
     console.log("> _handOutQuestions");
     if (this.remainingQuestions.length == 0) {

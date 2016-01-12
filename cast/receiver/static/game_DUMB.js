@@ -17,6 +17,10 @@ game_DUMB = {
     this._handOutQuestions();
   },
   handleAnswer: function(senderId, correctId, guessedId) {
+    gameState.players[senderId].answers.push({
+      correct: correctId == guessedId,
+      sec: moment.duration(new Date() - game_DUMB.currentAskedTime).asSeconds()
+    });
     var playerUi = vm.playerBySenderId(senderId);
     if (correctId == this.currentCorrect && correctId == guessedId) {
       displayAction("Player "+senderId+" totally got the answer RIGHT");
@@ -43,9 +47,10 @@ game_DUMB = {
     });
   },
   _handleEndGame: function() {
-    vm.currentQuestionText("HEY YOU GUYS! THE GAME IS OVER!");
+    vm.currentQuestionText("GAME OVER!");
     gameState.state = 'ENDED';
     broadcastState('Game over, man. Game over');
+    reportPlayerStats();
   },
   _shuffleQuestions: function() {
     for (var i = 0; i < this.remainingQuestions.length; ++i) {
@@ -88,5 +93,6 @@ game_DUMB = {
     } else {
       vm.currentQuestionImage(null);
     }
+    this.currentAskedTime = new Date();
   }
 }
