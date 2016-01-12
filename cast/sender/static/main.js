@@ -6,6 +6,7 @@
 (function(win, doc) {
 
   // Game variables
+  var gameType = 'DUMB';
   var gameState;
 
   // Helpers
@@ -25,12 +26,6 @@
     showScreen('join');
   }
 
-  // Screens
-  function showScreen(name) {
-    $('.screen').hide();
-    $('#screen-'+name).show();
-  }
-
   // Event listeners
   function onSubmitJoin() {
     var username = $('#inp-username').val();
@@ -48,14 +43,18 @@
     sender.loadSet(setId);
   }
 
+  function onStartGame() {
+    sender.startGame(gameType);
+  }
+
+  function onExit() {
+    showScreen('start');
+  }
+
   function bindEventListeners() {
     $('#btn-join').click(onSubmitJoin);
     $('#inp-username').keypress(function(e) {
       if (e.which === 13) onSubmitJoin();
-    });
-
-    $('#btn-leave').click(function() {
-      sender.leave();
     });
 
     $('#btn-submit-set-id').click(onSubmitSetId);
@@ -63,19 +62,36 @@
       if (e.which === 13) onSubmitSetId();
     });
 
-    $('#btn-start-game').click(function() {
-      sender.startGame('DUMB');
+    $('.btn-dumb').click(function() {
+      gameType = 'DUMB';
+      onStartGame();
     });
+
+    $('.btn-quizup').click(function() {
+      gameType = 'QUIZUP';
+      onStartGame();
+    });
+
+    $('.btn-restart').click(onStartGame);
+
+    $('.btn-exit').click(onExit);
   }
 
   // Message handler
   function handleMessage(message) {
     if (message.type === 'GAME_STATE') {
-      console.log(message);
+      console.log(message.data.state);
       gameState = message.data.state;
       if (gameState.state === 'PLAYING') {
         showScreen('playing');
         updateScore(message.data.playerId);
+      } else if (gameState.state === 'ENDED') {
+        showScreen('ended');
+      } else {
+        showScreen('start');
+      }
+      if (gameState.state === 'LOADED') {
+        showSetLoaded(gameState.set.id);
       }
     } else if (message.type === 'OBJECTIVE') {
       displayQuestion(message.data.correctId, message.data.possibleIds, !message.data.showDefinition);
@@ -83,9 +99,19 @@
   }
 
   // UI stuff
+  function showScreen(name) {
+    $('.screen').hide();
+    $('#screen-'+name).show();
+  }
+
+  function showSetLoaded(setId) {
+    $('#disp-set-id').text(setId);
+    $('#msg-set-loaded').show();
+  }
+
   function updateScore(id) {
     var score = gameState.players[id].score;
-    $('#disp-score').text(score);
+    $('.disp-score').text(score);
     var place = Object.keys(gameState.players).reduce(function(count, playerId) {
       if (gameState.players[playerId].score > score) return count+1;
       else return count;
@@ -118,10 +144,19 @@
         el.append(img);
       }
       el.click(function() {
-        sender.submitAnswer(correctId, term.id);
+        if (canAnswer) {
+          if (term.id === correctId) {
+            el.addClass('correct');
+          } else {
+            el.addClass('incorrect');
+          }
+          sender.submitAnswer(correctId, term.id);
+        }
+        if (gameType === 'QUIZUP') canAnswer = false;
       });
       $('#disp-question-choices').append(el);
     });
+    canAnswer = true;
   }
 
   // Call init on page load

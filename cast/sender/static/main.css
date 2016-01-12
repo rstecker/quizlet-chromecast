@@ -1,18 +1,21 @@
 /* main.css for Quizlet Chromecast */
 
 body,
+button {
+  color: #ffffff
+}
+
+body,
 button,
 input[type=text] {
   font-family: "lucida grande", "lucida sans unicode", arial, sans-serif;
 }
 
 .logo {
-  color: #ffffff;
   margin: 10px;
 }
 
 .header {
-  color: #ffffff;
   font-size: 32px;
 }
 
@@ -33,6 +36,10 @@ input[type=text] {
 .screen .center {
   margin-top: 200px;
   text-align: center;
+}
+
+.stats {
+  margin: 20px;
 }
 
 .input-text {
@@ -68,6 +75,25 @@ input[type=text] {
   width: 80%;
 }
 
+.answer-choice.correct {
+  background-color: #008800;
+  color: #ffffff;
+}
+
+.answer-choice.incorrect {
+  background-color: #880000;
+  color: #ffffff;
+}
+
+#msg-set-loaded {
+  display: none;
+  font-size: 24px;
+  position: absolute;
+  text-align: center;
+  top: 100px;
+  width: 100%;
+}
+
 #screen-playing {
   text-align: center;
 }
@@ -75,7 +101,6 @@ input[type=text] {
 #disp-question-prompt {
   background-color: #000000;
   border-radius: 20px;
-  color: #ffffff;
   display: block;
   font-size: 32px;
   margin: 32px auto;
