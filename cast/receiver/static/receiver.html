@@ -48,6 +48,7 @@ body {
   right: 5%;
   font-size: 30pt;
   background-color: #2B7BE4;
+  margin-top: 3%;
 }
 #content {
   position: absolute;
@@ -122,13 +123,20 @@ body {
   color: #E84E56;
 }
 .time {
-  color: #2B7BE4;
+  color: #5AA8DF;
 }
 .extra {
   position: absolute;
   bottom: 5%;
   width: 100%;
   text-align: center;
+}
+.countDown{
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  font-size: 50pt;
+  color: white;
 }
 </style>
 </head>
@@ -333,9 +341,12 @@ function startGame(gameType) {
     displayAction("> we do not know how to play ".gameType);
     return;
   }
+  Object.keys(gameState.players).forEach(function(senderId) {
+    gameState.players[senderId].score = 0;
+    vm.playerBySenderId(senderId).score(0);
+  });
   gameState.state = 'PLAYING';
   broadcastState("Game begins");
-  // TODO : clear scores
   privateGameState.currentGame.init(gameState.set, gameState.players);
   vm.state('PLAYING');
 }
@@ -348,7 +359,10 @@ manager.onSenderConnected = function(evt) {
     return;
   }
   addNewPlayerUI(senderId);
-  gameState.players[senderId] = {state: 'connected'};
+  gameState.players[senderId] = {
+    state: 'connected',
+    score: 0,
+  };
   displayAction("connected w/ "+ senderId);
   document.body.style.backgroundColor = 'black';
   document.body.style.color = 'white';
@@ -367,6 +381,9 @@ manager.onSenderDisconnected = function(evt) {
   delete gameState.players[senderId];
   broadcastState("Player disconnected");
   displayAction("Sender "+senderId+" has disconnected for reason: "+evt.reason);
+  if (gameState.state == 'PLAYING') {
+    privateGameState.currentGame.removePlayer(senderId);
+  }
 }
 
 function broadcastState(reason) {
@@ -376,6 +393,7 @@ function broadcastState(reason) {
       data: {
         reason: reason,
         state: gameState,
+        playerId: senderId,
       }
     });
   });

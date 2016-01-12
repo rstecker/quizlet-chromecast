@@ -13,6 +13,7 @@ game_DUMB = {
       game_DUMB.remainingQuestions.push(term.id);
       game_DUMB.termById[term.id] = term;
     });
+    vm.currentQuestionExtra("");
     this._handOutQuestions();
   },
   handleAnswer: function(senderId, correctId, guessedId) {
@@ -22,12 +23,16 @@ game_DUMB = {
       // update score in UI and view
       gameState.players[senderId].score += 1;
       broadcastState("Player "+senderId+" got a correct question");
-      playerUi.score(playerUi.score() + 1);
       this._handOutQuestions();
     } else {
       displayAction("Player "+senderId+" totally guessed WRONG");
-      playerUi.score(playerUi.score() - 0.5);
+      gameState.players[senderId].score -= 0.5;
+      broadcastState("Player "+senderId+" got an incorrect question");
     }
+    playerUi.score(gameState.players[senderId].score);
+  },
+  removePlayer: function(senderId) {
+    console.log("user dropped and I don't care")
   },
   addPlayer: function(senderId, player) {
     broadcastObjective({
