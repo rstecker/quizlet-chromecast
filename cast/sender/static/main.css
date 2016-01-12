@@ -16,6 +16,11 @@ input[type=text] {
   font-size: 32px;
 }
 
+.small {
+  font-size: 20px;
+  font-style: italic;
+}
+
 .screen {
   background-color: #216ccf;
   position: absolute;
@@ -68,6 +73,16 @@ input[type=text] {
 }
 
 #disp-question-prompt {
+  background-color: #000000;
+  border-radius: 20px;
   color: #ffffff;
-  margin: 20px;
+  display: block;
+  font-size: 32px;
+  margin: 32px auto;
+  padding: 12px 32px;
+  width: 80%;
+}
+
+#disp-question-choices {
+  margin-bottom: 20px;
 }
