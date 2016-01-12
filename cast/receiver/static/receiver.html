@@ -290,7 +290,7 @@ function reportPlayerStats() {
       incorrect += (!entry.correct) ? 1 : 0;
       console.log("looking to score ",entry)
       sec += entry.sec;
-    });
+    };
     sec = Math.round( 10 * sec / (correct + incorrect)) / 10;
     s += "<div class='player'>"+username+" : <span style='color: #25A73A'>"+correct+"</span>/<span style='color: #E84E56'>"+incorrect+"</span> : avg "+sec+" sec</div><br>";
   });
