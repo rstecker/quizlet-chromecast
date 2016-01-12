@@ -276,6 +276,28 @@ function displayAction(msg) {
   $('.logs').prepend('<div>'+msg+'</div>');
 }
 
+function reportPlayerStats() {
+  var s = "<div class='user-answer-state' style='width: 100%'>";
+  Object.keys(gameState.players).forEach(function(senderId) {
+    if (!gameState.players[senderId].username) { return; }
+    var username = gameState.players[senderId].username;
+    var correct = 0;
+    var incorrect = 0;
+    var sec = 0;
+    for(var i = 0; i < gameState.players[senderId].answers.length; ++i) {
+      var entry = gameState.players[senderId].answers[i];
+      correct += (entry.correct) ? 1 : 0;
+      incorrect += (!entry.correct) ? 1 : 0;
+      console.log("looking to score ",entry)
+      sec += entry.sec;
+    });
+    sec = Math.round( 10 * sec / (correct + incorrect)) / 10;
+    s += "<div class='player'>"+username+" : <span style='color: #25A73A'>"+correct+"</span>/<span style='color: #E84E56'>"+incorrect+"</span> : avg "+sec+" sec</div><br>";
+  });
+  s += "</div>";
+  vm.currentQuestionExtra(s);
+}
+
 function loadSetData(setId){
   vm.set.loaded(false);
   vm.setId(setId);
@@ -344,6 +366,7 @@ function startGame(gameType) {
   Object.keys(gameState.players).forEach(function(senderId) {
     gameState.players[senderId].score = 0;
     vm.playerBySenderId(senderId).score(0);
+    gameState.players[senderId].answers = [];
   });
   gameState.state = 'PLAYING';
   broadcastState("Game begins");
@@ -370,6 +393,9 @@ manager.onSenderConnected = function(evt) {
 
   if (gameState.state == 'PLAYING') {
     privateGameState.currentGame.addPlayer(senderId, gameState.players[senderId]);
+    gameState.players[senderId].score = 0;
+    vm.playerBySenderId(senderId).score(0);
+    gameState.players[senderId].answers = [];
   }
 };
 
