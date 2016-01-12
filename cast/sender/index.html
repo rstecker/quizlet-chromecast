@@ -8,6 +8,7 @@
     <script type="text/javascript" src="static/main.js"></script>
   </head>
   <body>
+    <!-- 'join' screen -->
     <div id="screen-join" class="screen">
       <div class="logo">Quizlet Chromecast</div>
       <div class="center">
@@ -16,28 +17,42 @@
         <button id="btn-join" class="button">Join</button>
       </div>
     </div>
-
+    
+    <!-- 'start' screen -->
     <div id="screen-start" class="screen">
       <div class="logo">Quizlet Chromecast</div>
+      <div id="msg-set-loaded">Set <span id="disp-set-id"></span> loaded!</div>
       <div class="center">
         <input id="inp-set-id" class="input-text" type="text" placeholder="Enter a set ID">
         <br>
         <button id="btn-submit-set-id" class="button">Load Set</button>
         <br>
-        <button id="btn-start-game" class="button">Start Game</button>
+        <button class="button btn-dumb">Start Basic</button>
+        <button class="button btn-quizup">Start Quizup</button>
       </div>
     </div>
 
+    <!-- 'playing' screen -->
     <div id="screen-playing" class="screen">
       <div class="header">
         <span id="disp-place"></span><span id="disp-place-suffix" class="small"></span>
         &middot;
-        <span id="disp-score"></span><span class="small"> points</span>
+        <span class="disp-score"></span><span class="small"> points</span>
       </div>
       <div id="disp-question-prompt"></div>
       <div id="disp-question-choices"></div>
-      <button id="btn-exit" class="button">Exit</button>
-      <button id="btn-restart" class="button">Restart</button>
+      <button class="button btn-exit">Exit</button>
+      <button class="button btn-restart">Restart</button>
+    </div>
+
+    <!-- 'ended' screen -->
+    <div id="screen-ended" class="screen">
+      <div class="center">
+        <div class="header">Game ended</div>
+        <div class="stats">Final score: <span class="disp-score">no</span> points</div>
+        <button class="button btn-exit">Exit</button>
+        <button class="button btn-restart">Restart</button>
+      </div>
     </div>
   </body>
 </html>
